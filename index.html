@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="随机抽取一个省级行政区，发现当地特色美食。">
+    <title>省份美食摇号</title>
+    <style>
+        :root {
+            --ink: #2d2520;
+            --muted: #76675e;
+            --paper: #fffaf2;
+            --cream: #f6ead8;
+            --coral: #d95945;
+            --coral-dark: #a83f32;
+            --gold: #e8a43a;
+            --line: rgba(73, 46, 32, .14);
+            --shadow: 0 24px 70px rgba(83, 48, 28, .15);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: 28px 18px;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 12% 12%, rgba(232, 164, 58, .22) 0 8%, transparent 8.2%),
+                radial-gradient(circle at 88% 82%, rgba(217, 89, 69, .16) 0 12%, transparent 12.2%),
+                linear-gradient(135deg, #f8eddb 0%, #f3d7bc 52%, #f7e9d6 100%);
+            font-family: "Noto Serif SC", "Songti SC", Georgia, serif;
+        }
+
+        .card {
+            position: relative;
+            width: min(100%, 520px);
+            overflow: hidden;
+            padding: clamp(30px, 7vw, 54px) clamp(24px, 8vw, 58px) 34px;
+            text-align: center;
+            background: var(--paper);
+            border: 1px solid rgba(255, 255, 255, .75);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .card::before,
+        .card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            width: 34px;
+            height: 100%;
+            background-image: repeating-linear-gradient(0deg, transparent 0 18px, rgba(217, 89, 69, .12) 19px 20px);
+            pointer-events: none;
+        }
+
+        .card::before { left: 0; }
+        .card::after { right: 0; }
+
+        .eyebrow {
+            position: relative;
+            z-index: 1;
+            margin: 0 0 12px;
+            color: var(--coral);
+            font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .18em;
+        }
+
+        h1 {
+            position: relative;
+            z-index: 1;
+            margin: 0;
+            font-size: clamp(30px, 8vw, 44px);
+            line-height: 1.15;
+            letter-spacing: .04em;
+        }
+
+        .intro {
+            position: relative;
+            z-index: 1;
+            margin: 14px auto 30px;
+            color: var(--muted);
+            font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .result-box {
+            position: relative;
+            z-index: 1;
+            min-height: 190px;
+            display: grid;
+            place-items: center;
+            padding: 26px 18px;
+            margin-bottom: 26px;
+            background: #fff3df;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+        }
+
+        .result-box.is-rolling .province,
+        .result-box.is-rolling .food { animation: flicker .12s linear infinite alternate; }
+
+        .province {
+            margin-bottom: 13px;
+            color: var(--coral-dark);
+            font-size: clamp(28px, 7vw, 38px);
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .food {
+            max-width: 350px;
+            color: var(--muted);
+            font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        #rollBtn {
+            position: relative;
+            z-index: 1;
+            min-width: 190px;
+            padding: 14px 30px;
+            color: #fffaf2;
+            background: var(--coral);
+            border: 0;
+            border-radius: 3px;
+            box-shadow: 0 8px 0 var(--coral-dark), 0 12px 22px rgba(168, 63, 50, .2);
+            cursor: pointer;
+            font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease;
+        }
+
+        #rollBtn:hover { background: #e46751; transform: translateY(-2px); }
+        #rollBtn:active,
+        #rollBtn[aria-busy="true"] { box-shadow: 0 3px 0 var(--coral-dark), 0 7px 14px rgba(168, 63, 50, .16); transform: translateY(5px); }
+        #rollBtn:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+        #rollBtn[aria-busy="true"] { cursor: wait; }
+
+        .count {
+            position: relative;
+            z-index: 1;
+            margin: 28px 0 0;
+            color: #a28d7d;
+            font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            font-size: 12px;
+        }
+
+        @keyframes flicker {
+            from { opacity: .45; transform: translateY(-2px); }
+            to { opacity: 1; transform: translateY(2px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <p class="eyebrow">一签入味 · 今日吃什么</p>
+        <h1>省份美食摇号</h1>
+        <p class="intro">把选择交给一场小小的缘分，<br>看看今天会遇见哪一道地方风味。</p>
+
+        <section class="result-box" id="resultBox" aria-live="polite" aria-atomic="true">
+            <div>
+                <div class="province" id="province">点击下方按钮摇号</div>
+                <div class="food" id="food">随机抽取你的下一顿灵感</div>
+            </div>
+        </section>
+
+        <button id="rollBtn" type="button">开始摇号</button>
+        <p class="count">收录 34 个省级行政区的特色风味</p>
+    </main>
+
+    <script>
+        const data = [
+            { name: "河北省", food: "驴肉火烧、金毛狮子鱼" },
+            { name: "山西省", food: "刀削面、过油肉" },
+            { name: "辽宁省", food: "锅包肉、小鸡炖蘑菇" },
+            { name: "吉林省", food: "雪衣豆沙、白肉血肠" },
+            { name: "黑龙江省", food: "地三鲜、得莫利炖鱼" },
+            { name: "江苏省", food: "松鼠桂鱼、清炖蟹粉狮子头、盐水鸭" },
+            { name: "浙江省", food: "东坡肉、西湖醋鱼" },
+            { name: "安徽省", food: "臭鳜鱼、火腿炖甲鱼" },
+            { name: "福建省", food: "佛跳墙、荔枝肉" },
+            { name: "江西省", food: "藜蒿炒腊肉、瓦罐汤" },
+            { name: "山东省", food: "九转大肠、葱烧海参、德州扒鸡" },
+            { name: "河南省", food: "胡辣汤、鲤鱼焙面" },
+            { name: "湖北省", food: "热干面、清蒸武昌鱼" },
+            { name: "湖南省", food: "剁椒鱼头、毛氏红烧肉" },
+            { name: "广东省", food: "白切鸡、蜜汁叉烧" },
+            { name: "海南省", food: "文昌鸡、椰子饭" },
+            { name: "四川省", food: "麻婆豆腐、回锅肉" },
+            { name: "贵州省", food: "酸汤鱼、折耳根炒腊肉" },
+            { name: "云南省", food: "过桥米线、汽锅鸡" },
+            { name: "陕西省", food: "羊肉泡馍、葫芦鸡" },
+            { name: "甘肃省", food: "兰州牛肉面、手抓羊肉" },
+            { name: "青海省", food: "炕锅羊排、土火锅" },
+            { name: "台湾省", food: "三杯鸡、海蛎煎、卤肉饭" },
+            { name: "内蒙古自治区", food: "手把肉、烤全羊" },
+            { name: "广西壮族自治区", food: "螺蛳粉、柠檬鸭" },
+            { name: "西藏自治区", food: "牦牛肉炖萝卜、酥油茶" },
+            { name: "宁夏回族自治区", food: "手抓滩羊肉、羊杂碎" },
+            { name: "新疆维吾尔自治区", food: "大盘鸡、烤包子" },
+            { name: "北京市", food: "北京烤鸭、京酱肉丝" },
+            { name: "天津市", food: "罾蹦鲤鱼、狗不理包子" },
+            { name: "上海市", food: "本帮红烧肉、生煎包" },
+            { name: "重庆市", food: "重庆牛油火锅、毛血旺" },
+            { name: "香港特别行政区", food: "云吞面、蜜汁叉烧、菠萝油" },
+            { name: "澳门特别行政区", food: "葡式蛋挞、葡国鸡、猪扒包" }
+        ];
+
+        const provinceDom = document.getElementById("province");
+        const foodDom = document.getElementById("food");
+        const resultBox = document.getElementById("resultBox");
+        const button = document.getElementById("rollBtn");
+        let rollingTimer;
+
+        function showResult(item) {
+            provinceDom.textContent = item.name;
+            foodDom.textContent = `特色美食：${item.food}`;
+        }
+
+        function roll() {
+            if (button.getAttribute("aria-busy") === "true") return;
+
+            button.setAttribute("aria-busy", "true");
+            button.textContent = "摇号中…";
+            resultBox.classList.add("is-rolling");
+            let ticks = 0;
+            clearInterval(rollingTimer);
+            rollingTimer = setInterval(() => {
+                showResult(data[Math.floor(Math.random() * data.length)]);
+                ticks += 1;
+                if (ticks >= 12) {
+                    clearInterval(rollingTimer);
+                    resultBox.classList.remove("is-rolling");
+                    button.removeAttribute("aria-busy");
+                    button.textContent = "再摇一次";
+                }
+            }, 80);
+        }
+
+        button.addEventListener("click", roll);
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && document.activeElement === document.body) roll();
+        });
+    </script>
+</body>
+</html>
